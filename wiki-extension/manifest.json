@@ -1,16 +1,19 @@
 {
   "manifest_version": 3,
   "name": "LLM WIKI Context Injector",
-  "version": "1.0",
-  "description": "나의 LLM WIKI 컨텍스트를 AI 사이트에 자동 주입합니다",
+  "version": "1.1",
+  "description": "나의 LLM WIKI 컨텍스트를 AI 사이트에 자동 주입하고 브라우저에서 지식을 캡처합니다",
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "contextMenus",
+    "alarms"
   ],
   "host_permissions": [
     "https://claude.ai/*",
     "https://chatgpt.com/*",
     "https://gemini.google.com/*",
+    "https://perplexity.ai/*",
     "https://api.github.com/*"
   ],
   "background": {
@@ -21,7 +24,8 @@
       "matches": [
         "https://claude.ai/*",
         "https://chatgpt.com/*",
-        "https://gemini.google.com/*"
+        "https://gemini.google.com/*",
+        "https://perplexity.ai/*"
       ],
       "js": ["content_script.js"],
       "run_at": "document_idle"
