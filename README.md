@@ -1,64 +1,65 @@
 # 나의 LLM WIKI
 
-> Claude, ChatGPT, Gemini 등 어떤 AI 툴에서도 나의 컨텍스트를 자동으로 주입하는 세컨드 브레인
+> Claude, ChatGPT, Gemini 등 **어떤 AI 툴에서도** 나의 컨텍스트를 자동으로 주입하는 개인 세컨드 브레인
 
-## 접속 주소
-https://imdaeseong.github.io/llm-wiki/
+**WIKI 앱 바로가기 →** https://imdaeseong.github.io/llm-wiki/
 
-## 구성 파일
+---
 
-```
-llm-wiki/
-├── index.html          ← WIKI 앱 (GitHub Pages)
-├── README.md           ← 이 파일
-└── wiki-extension/     ← 크롬 확장 프로그램
-    ├── manifest.json
-    ├── background.js
-    ├── content_script.js
-    └── popup.html
-```
+## 무엇인가?
 
-## 설치 순서
+AI 툴을 쓸 때마다 "나는 VC++ 개발자입니다, Visual Studio를 씁니다..." 를 반복 입력하는 번거로움을 없앤 시스템입니다.
 
-### 1. WIKI 앱 접속
-https://imdaeseong.github.io/llm-wiki/ 접속
+나의 개발 환경, 기술 스택, 코딩 스타일, 진행 프로젝트를 한 곳에 저장하고 어떤 AI든 자동으로 인식하게 만듭니다.
 
-### 2. GitHub Token 발급 (Gist 동기화용)
-- GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
-- gist 권한 체크 → 생성 → 토큰 복사 (ghp_xxxx...)
+---
 
-### 3. Anthropic API Key 발급
-- https://console.anthropic.com → API Keys → Create
+## 구성
 
-### 4. WIKI 앱 초기 설정
-- 좌측 하단 GitHub Token 입력
-- Anthropic API Key 입력
-- 프로필, 기술스택, AI 선호도 입력 → 저장
-- 저장 버튼 클릭 → Gist 자동 생성
-
-### 5. 크롬 확장 설치
-- chrome://extensions/ → 개발자 모드 ON
-- "압축해제된 확장 프로그램 로드" → wiki-extension 폴더 선택
-- 확장 아이콘 클릭 → Token + Gist ID 입력 → 동기화
-
-### 6. Claude Projects 설정
-- WIKI 앱 → 프롬프트 생성기 → 전체 복사 → my-wiki.md 저장
-- claude.ai → Projects → New Project → 파일 업로드
-
-### 7. Claude Desktop + Obsidian MCP (선택)
-- https://claude.ai/download → Claude Desktop 설치
-- npm install -g obsidian-mcp
-- claude_desktop_config.json에 vault 경로 추가
-
-## 사용 방법
-
-| 상황 | 방법 |
+| 폴더 / 파일 | 설명 |
 |---|---|
-| claude.ai 사용 시 | 크롬 확장 "WIKI 주입" 버튼 클릭 |
-| ChatGPT 사용 시 | 크롬 확장 "WIKI 주입" 버튼 클릭 |
-| Claude Projects | 자동으로 컨텍스트 포함 |
-| Claude Desktop | Obsidian vault 직접 연동 |
+| `index.html` | WIKI 웹 앱 (GitHub Pages로 서비스) |
+| `wiki-extension/` | 크롬 확장 — AI 사이트 자동 컨텍스트 주입 |
+| `claude-projects/` | Claude Projects용 컨텍스트 파일 |
+| `obsidian-mcp/` | Obsidian MCP 설정 템플릿 |
+| `docs/` | 상세 설치 및 사용 가이드 |
+
+---
+
+## 빠른 시작
+
+### 1단계 — WIKI 앱 접속 및 설정
+→ [01-설치가이드.md](docs/01-설치가이드.md)
+
+### 2단계 — 크롬 확장 설치
+→ [02-크롬확장-사용법.md](docs/02-크롬확장-사용법.md)
+
+### 3단계 — Claude Projects 연동
+→ [03-claude-projects-사용법.md](docs/03-claude-projects-사용법.md)
+
+### 4단계 — Obsidian MCP 연동 (선택)
+→ [04-obsidian-mcp-사용법.md](docs/04-obsidian-mcp-사용법.md)
+
+### 집 ↔ 회사 데이터 동기화
+→ [05-집회사-동기화.md](docs/05-집회사-동기화.md)
+
+---
+
+## 사용 방법 한눈에
+
+```
+AI 사이트 접속 (claude.ai / chatgpt.com / gemini.google.com)
+  → 우하단 보라색 "WIKI 주입" 버튼 클릭
+  → 내 컨텍스트 자동 삽입
+  → 질문 입력 후 전송
+```
+
+---
 
 ## 데이터 저장 위치
-- 노트, 프로필, 프로젝트 → GitHub Gist (무료, 암호화)
-- API 키 → 브라우저 메모리 (새로고침 시 초기화, 저장 안 됨)
+
+| 데이터 | 저장 위치 | 비용 |
+|---|---|---|
+| 노트, 프로필, 프로젝트 | GitHub Gist (비공개) | 무료 |
+| WIKI 앱 | GitHub Pages | 무료 |
+| API 키 | 브라우저 메모리 (저장 안 됨) | — |
