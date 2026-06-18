@@ -37,6 +37,7 @@
   <span class="badge">claude.ai</span>
   <span class="badge">chatgpt.com</span>
   <span class="badge">gemini.google.com</span>
+  <span class="badge">perplexity.ai</span>
 </div>
 
 <div class="field">
@@ -66,10 +67,11 @@
 </div>
 
 <div id="status"></div>
+<div id="token-info" style="font-size:11px;color:#9a9990;margin-top:4px;display:none"></div>
 
 <script>
 // 저장된 설정 불러오기
-chrome.storage.local.get(['wikiSettings','wikiCachedAt'], r => {
+chrome.storage.local.get(['wikiSettings','wikiCachedAt','wikiData'], r => {
   const s = r.wikiSettings || {};
   if (s.gistToken) document.getElementById('gist-token').value = s.gistToken;
   if (s.gistId)    document.getElementById('gist-id').value    = s.gistId;
@@ -81,6 +83,12 @@ chrome.storage.local.get(['wikiSettings','wikiCachedAt'], r => {
   if (r.wikiCachedAt) {
     const ago = Math.round((Date.now()-r.wikiCachedAt)/60000);
     setStatus(`캐시: ${ago}분 전`, 'ok');
+  }
+  if (r.wikiData) {
+    const chars = JSON.stringify(r.wikiData).length;
+    const tokens = Math.round(chars / 4).toLocaleString('ko-KR');
+    const el = document.getElementById('token-info');
+    if (el) { el.textContent = `전체 WIKI: ~${tokens} 토큰`; el.style.display = 'block'; }
   }
 });
 
