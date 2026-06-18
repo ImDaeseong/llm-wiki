@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: -apple-system, sans-serif; width: 300px; padding: 16px; background: #fff; color: #1a1a18; margin: 0; }
+  h2 { font-size: 15px; font-weight: 500; margin-bottom: 14px; }
+  label { font-size: 11px; color: #9a9990; display: block; margin-bottom: 3px; }
+  input[type=text], input[type=password] {
+    width: 100%; font-size: 12px; font-family: monospace;
+    padding: 6px 8px; border: 0.5px solid rgba(0,0,0,0.2);
+    border-radius: 6px; background: #f7f6f3; color: #1a1a18; margin-bottom: 10px;
+  }
+  .field { margin-bottom: 8px; }
+  .row { display: flex; gap: 6px; margin-bottom: 10px; }
+  button {
+    flex: 1; padding: 7px; font-size: 12px; border-radius: 6px;
+    border: 0.5px solid rgba(0,0,0,0.2); background: #f0efe9;
+    color: #1a1a18; cursor: pointer;
+  }
+  .btn-primary { background: #534AB7; color: #fff; border-color: #534AB7; }
+  .btn-primary:hover { opacity: .88; }
+  #status { font-size: 12px; margin-top: 8px; padding: 6px 8px; border-radius: 6px; display: none; }
+  .ok  { background: #E1F5EE; color: #085041; display: block; }
+  .err { background: #FCEBEB; color: #791F1F; display: block; }
+  .divider { border: none; border-top: 0.5px solid rgba(0,0,0,0.1); margin: 12px 0; }
+  .check-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #5a5a56; margin-bottom: 6px; }
+  .check-row input { width: auto; margin: 0; }
+  .site-badges { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px; }
+  .badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: #EEEDFE; color: #3C3489; }
+</style>
+</head>
+<body>
+<h2>나의 LLM WIKI</h2>
+
+<div class="site-badges">
+  <span class="badge">claude.ai</span>
+  <span class="badge">chatgpt.com</span>
+  <span class="badge">gemini.google.com</span>
+</div>
+
+<div class="field">
+  <label>GitHub Personal Access Token</label>
+  <input type="password" id="gist-token" placeholder="ghp_xxxx...">
+</div>
+<div class="field">
+  <label>Gist ID (WIKI 저장 후 자동 입력됨)</label>
+  <input type="text" id="gist-id" placeholder="a1b2c3d4e5f6...">
+</div>
+
+<div class="row">
+  <button class="btn-primary" onclick="saveSettings()">저장</button>
+  <button onclick="fetchNow()">지금 동기화</button>
+</div>
+
+<hr class="divider">
+<div style="font-size:11px;color:#9a9990;margin-bottom:8px">주입할 항목 선택</div>
+<div class="check-row"><input type="checkbox" id="inc-profile" checked><label style="margin:0">프로필 &amp; 환경</label></div>
+<div class="check-row"><input type="checkbox" id="inc-stack" checked><label style="margin:0">기술 스택</label></div>
+<div class="check-row"><input type="checkbox" id="inc-prefs" checked><label style="margin:0">AI 공통 지침</label></div>
+<div class="check-row"><input type="checkbox" id="inc-projects"><label style="margin:0">진행 중인 프로젝트</label></div>
+<div class="check-row"><input type="checkbox" id="inc-notes"><label style="margin:0">최근 노트 5개</label></div>
+
+<div class="row" style="margin-top:10px">
+  <button onclick="saveInclude()">항목 저장</button>
+</div>
+
+<div id="status"></div>
+
+<script>
+// 저장된 설정 불러오기
+chrome.storage.local.get(['wikiSettings','wikiCachedAt'], r => {
+  const s = r.wikiSettings || {};
+  if (s.gistToken) document.getElementById('gist-token').value = s.gistToken;
+  if (s.gistId)    document.getElementById('gist-id').value    = s.gistId;
+  const inc = s.include || {};
+  ['profile','stack','prefs','projects','notes'].forEach(k => {
+    const el = document.getElementById('inc-'+k);
+    if (el && inc[k] !== undefined) el.checked = inc[k];
+  });
+  if (r.wikiCachedAt) {
+    const ago = Math.round((Date.now()-r.wikiCachedAt)/60000);
+    setStatus(`캐시: ${ago}분 전`, 'ok');
+  }
+});
+
+function saveSettings() {
+  const token = document.getElementById('gist-token').value.trim();
+  const gistId = document.getElementById('gist-id').value.trim();
+  if (!token) { setStatus('Token을 입력하세요', 'err'); return; }
+  chrome.storage.local.get('wikiSettings', r => {
+    const prev = r.wikiSettings || {};
+    chrome.storage.local.set({ wikiSettings: { ...prev, gistToken: token, gistId } }, () => {
+      setStatus('설정 저장됨', 'ok');
+    });
+  });
+}
+
+function saveInclude() {
+  const inc = {};
+  ['profile','stack','prefs','projects','notes'].forEach(k => {
+    inc[k] = document.getElementById('inc-'+k).checked;
+  });
+  chrome.storage.local.get('wikiSettings', r => {
+    const prev = r.wikiSettings || {};
+    chrome.storage.local.set({ wikiSettings: { ...prev, include: inc } }, () => {
+      setStatus('항목 설정 저장됨', 'ok');
+    });
+  });
+}
+
+function fetchNow() {
+  setStatus('동기화 중...', '');
+  chrome.runtime.sendMessage({ type: 'FETCH_WIKI' }, response => {
+    if (response?.ok) {
+      setStatus('동기화 완료 — ' + new Date().toLocaleTimeString('ko-KR'), 'ok');
+    } else {
+      setStatus('실패: ' + (response?.error||'알 수 없는 오류'), 'err');
+    }
+  });
+}
+
+function setStatus(msg, cls) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = cls || '';
+  if (!cls) el.style.display = 'block';
+}
+</script>
+</body>
+</html>
