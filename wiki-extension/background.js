@@ -79,10 +79,13 @@ async function fetchWikiData() {
 }
 
 async function appendNote(title, body, url) {
-  const { wikiSettings, wikiData } = await chrome.storage.local.get(['wikiSettings', 'wikiData']);
+  const { wikiSettings } = await chrome.storage.local.get('wikiSettings');
   if (!wikiSettings?.gistToken || !wikiSettings?.gistId) {
     throw new Error('Gist 설정 없음 — 팝업에서 Token과 Gist ID를 먼저 입력하세요.');
   }
+  // 다기기 덮어쓰기 방지: 추가 전 최신 데이터를 먼저 가져옴
+  try { await fetchWikiData(); } catch {}
+  const { wikiData } = await chrome.storage.local.get('wikiData');
 
   let hostname = 'unknown';
   try { hostname = new URL(url).hostname.replace('www.', ''); } catch {}

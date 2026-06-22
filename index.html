@@ -89,6 +89,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .dot{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:blink 1.2s infinite}
 .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
 @keyframes blink{0%,100%{opacity:.2}50%{opacity:1}}
+.sync-status.loading{color:var(--text3);display:block}
 .tabs{display:flex;gap:0;border-bottom:0.5px solid var(--border);margin-bottom:1.25rem}
 .tab-btn{padding:8px 16px;font-size:13px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text2);cursor:pointer;margin-bottom:-0.5px}
 .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
@@ -121,6 +122,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
   <div id="sync-bar">
     <label>GitHub Token (Gist 동기화)</label>
     <input id="gist-token" type="password" placeholder="ghp_xxxx..." oninput="onTokenInput()">
+    <label style="margin-top:8px">Gist ID <span style="font-weight:400;font-size:10px">(다기기 동기화 시 입력)</span></label>
+    <input id="gist-id-input" type="text" style="width:100%;font-size:11px;font-family:monospace;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);margin-bottom:6px" placeholder="저장 시 자동 설정 — 타기기에서 직접 입력">
     <label style="margin-top:8px">Anthropic API Key</label>
     <input id="claude-key" type="password" placeholder="sk-ant-...">
     <div class="sync-row">
@@ -325,6 +328,7 @@ const LS = {
   get: k => { try { return JSON.parse(localStorage.getItem('wiki_'+k)); } catch { return null; } },
   set: (k,v) => localStorage.setItem('wiki_'+k, JSON.stringify(v)),
 };
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // ── Gist 동기화 ──────────────────────────────────────────────
 const GIST_FILENAME = 'llm-wiki-data.json';
@@ -343,7 +347,9 @@ function onTokenInput() {
 async function syncSave() {
   const token = getToken();
   if (!token) { toast('GitHub Token을 먼저 입력하세요'); return; }
-  setSyncStatus('저장 중...', '');
+  const inputId = (document.getElementById('gist-id-input')?.value || '').trim();
+  if (inputId) { gistId = inputId; LS.set('gist_id', gistId); }
+  setSyncStatus('저장 중...', 'loading');
   const data = {
     profile: LS.get('profile'),
     stack: LS.get('stack'),
@@ -372,6 +378,8 @@ async function syncSave() {
     const json = await res.json();
     gistId = json.id;
     LS.set('gist_id', gistId);
+    const giEl = document.getElementById('gist-id-input');
+    if (giEl) giEl.value = gistId;
     document.getElementById('sync-label').textContent = 'Gist 동기화됨';
     setSyncStatus('저장 완료 — ' + new Date().toLocaleTimeString('ko-KR'), 'ok');
     toast('Gist에 저장됨');
@@ -381,8 +389,10 @@ async function syncSave() {
 async function syncLoad() {
   const token = getToken();
   if (!token) { toast('GitHub Token을 먼저 입력하세요'); return; }
-  if (!gistId) { toast('저장된 Gist ID 없음. 먼저 저장하세요.'); return; }
-  setSyncStatus('불러오는 중...', '');
+  const inputId = (document.getElementById('gist-id-input')?.value || '').trim();
+  if (inputId) { gistId = inputId; LS.set('gist_id', gistId); }
+  if (!gistId) { toast('Gist ID를 입력하거나 먼저 저장하세요.'); return; }
+  setSyncStatus('불러오는 중...', 'loading');
   try {
     const res = await fetch(`https://api.github.com/gists/${gistId}`, {
       headers: { 'Authorization': `token ${token}` }
@@ -405,7 +415,7 @@ async function syncLoad() {
 function setSyncStatus(msg, cls) {
   const el = document.getElementById('sync-status');
   el.textContent = msg;
-  el.className = 'sync-status' + (cls ? ' ' + cls : ' ok');
+  el.className = 'sync-status' + (cls ? ' ' + cls : ' loading');
 }
 
 // ── Navigation ────────────────────────────────────────────────
@@ -462,8 +472,8 @@ function renderStack() {
   if (!list.length) { el.innerHTML = '<div class="card" style="color:var(--text3);font-size:13px">기술을 추가해보세요.</div>'; return; }
   const lc = {'전문가':'badge-accent','고급':'badge-teal','중급':'badge-amber','입문':'badge-coral'};
   el.innerHTML = list.map((s,i) => `<div class="card" style="display:flex;align-items:center;gap:12px">
-    <div style="flex:1"><span style="font-size:14px;font-weight:500">${s.name}</span><span style="font-size:12px;color:var(--text3);margin-left:8px">${s.desc}</span></div>
-    <span class="badge ${lc[s.level]||'badge-amber'}">${s.level}</span>
+    <div style="flex:1"><span style="font-size:14px;font-weight:500">${esc(s.name)}</span><span style="font-size:12px;color:var(--text3);margin-left:8px">${esc(s.desc)}</span></div>
+    <span class="badge ${lc[s.level]||'badge-amber'}">${esc(s.level)}</span>
     <button class="btn btn-sm" onclick="removeStack(${i})">삭제</button>
   </div>`).join('');
 }
@@ -495,18 +505,26 @@ function savePrefs() {
 
 // ── Notes ─────────────────────────────────────────────────────
 function renderNotes(filter) {
-  let notes = LS.get('notes') || [];
-  if (filter) notes = notes.filter(n => n.title.includes(filter)||n.body.includes(filter)||(n.tags||[]).some(t=>t.includes(filter)));
+  const allNotes = LS.get('notes') || [];
+  const notes = filter
+    ? allNotes.filter(n => n.title.includes(filter)||n.body.includes(filter)||(n.tags||[]).some(t=>t.includes(filter)))
+    : allNotes;
   const el = document.getElementById(filter ? 'search-results' : 'notes-list-area');
   if (!notes.length) { el.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:1rem 0">${filter?'검색 결과 없음':'노트가 없습니다.'}</div>`; return; }
   const cc = {'학습':'badge-accent','트러블슈팅':'badge-coral','아이디어':'badge-teal','레퍼런스':'badge-amber','회의/결정':'badge-accent','기타':'badge-amber'};
-  el.innerHTML = `<div class="card">${notes.slice().reverse().map((n,i) => `
-    <div class="note-item">
-      <div class="note-item-title">${n.title}</div>
-      <div class="note-item-meta"><span class="badge ${cc[n.cat]||'badge-amber'}" style="font-size:10px">${n.cat}</span><span>${n.date}</span></div>
-      ${n.tags?.length ? `<div class="chips">${n.tags.map(t=>`<span class="chip">#${t}</span>`).join('')}</div>` : ''}
-    </div>`).join('')}</div>`;
+  el.innerHTML = `<div class="card">${notes.slice().reverse().map(n => {
+    const origIdx = allNotes.indexOf(n);
+    return `<div class="note-item">
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <div class="note-item-title" style="flex:1">${esc(n.title)}</div>
+        ${!filter?`<button class="btn btn-sm" style="opacity:.5;flex-shrink:0" onclick="removeNote(${origIdx})">삭제</button>`:''}
+      </div>
+      <div class="note-item-meta"><span class="badge ${cc[n.cat]||'badge-amber'}" style="font-size:10px">${esc(n.cat)}</span><span>${esc(n.date)}</span></div>
+      ${n.tags?.length ? `<div class="chips">${n.tags.map(t=>`<span class="chip">#${esc(t)}</span>`).join('')}</div>` : ''}
+    </div>`;
+  }).join('')}</div>`;
 }
+function removeNote(i) { const l=LS.get('notes')||[]; l.splice(i,1); LS.set('notes',l); renderNotes(); toast('노트 삭제됨'); }
 function searchNotes() { renderNotes(document.getElementById('n-search').value.trim()); }
 function addNote() {
   const title = document.getElementById('n-title').value.trim();
@@ -549,13 +567,13 @@ function renderProjects() {
   const sc = {'진행중':'badge-teal','완료':'badge-accent','대기':'badge-amber','계획':'badge-coral'};
   el.innerHTML = list.map((p,i) => `<div class="card">
     <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">
-      <span style="font-size:15px;font-weight:500">${p.name}</span>
-      <span class="badge ${sc[p.status]||'badge-amber'}">${p.status}</span>
+      <span style="font-size:15px;font-weight:500">${esc(p.name)}</span>
+      <span class="badge ${sc[p.status]||'badge-amber'}">${esc(p.status)}</span>
       <button class="btn btn-sm" style="margin-left:auto" onclick="removeProject(${i})">삭제</button>
     </div>
     <div class="kv-grid">
-      <span class="kv-key">스택</span><span class="kv-val">${p.stack}</span>
-      <span class="kv-key">설명</span><span class="kv-val">${p.desc}</span>
+      <span class="kv-key">스택</span><span class="kv-val">${esc(p.stack)}</span>
+      <span class="kv-key">설명</span><span class="kv-val">${esc(p.desc)}</span>
     </div>
   </div>`).join('');
 }
@@ -577,14 +595,14 @@ function renderDecisions() {
   if (!list.length) { el.innerHTML = '<div class="card" style="color:var(--text3);font-size:13px">결정 사항을 기록해보세요.</div>'; return; }
   el.innerHTML = list.map((d,i) => `<div class="card">
     <div style="display:flex;align-items:baseline;margin-bottom:8px">
-      <span style="font-size:14px;font-weight:500">${d.title}</span>
-      <span style="font-size:12px;color:var(--text3);margin-left:8px">${d.date}</span>
+      <span style="font-size:14px;font-weight:500">${esc(d.title)}</span>
+      <span style="font-size:12px;color:var(--text3);margin-left:8px">${esc(d.date)}</span>
       <button class="btn btn-sm" style="margin-left:auto" onclick="removeDecision(${i})">삭제</button>
     </div>
     <div class="kv-grid">
-      ${d.why?`<span class="kv-key">이유</span><span class="kv-val">${d.why}</span>`:''}
-      ${d.alt?`<span class="kv-key">대안</span><span class="kv-val">${d.alt}</span>`:''}
-      ${d.result?`<span class="kv-key">결과</span><span class="kv-val">${d.result}</span>`:''}
+      ${d.why?`<span class="kv-key">이유</span><span class="kv-val">${esc(d.why)}</span>`:''}
+      ${d.alt?`<span class="kv-key">대안</span><span class="kv-val">${esc(d.alt)}</span>`:''}
+      ${d.result?`<span class="kv-key">결과</span><span class="kv-val">${esc(d.result)}</span>`:''}
     </div>
   </div>`).join('');
 }
@@ -680,14 +698,16 @@ async function askAI() {
     let parsed;
     try { parsed = JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim()); }
     catch { parsed = { answer: data.content[0].text, keyPoints:[], obsidian:'' }; }
-    const kp = (parsed.keyPoints||[]).map(p=>`<li style="margin-bottom:4px">${p}</li>`).join('');
-    document.getElementById('ask-result').innerHTML = `<div class="card">
-      <div style="font-size:14px;line-height:1.75;white-space:pre-wrap;color:var(--text2)">${parsed.answer}</div>
+    const kp = (parsed.keyPoints||[]).map(p=>`<li style="margin-bottom:4px">${esc(p)}</li>`).join('');
+    const resultEl = document.getElementById('ask-result');
+    resultEl.innerHTML = `<div class="card">
+      <div id="ask-answer-text" style="font-size:14px;line-height:1.75;white-space:pre-wrap;color:var(--text2)"></div>
       ${kp?`<ul style="margin:12px 0 0 16px;font-size:13px;color:var(--text2)">${kp}</ul>`:''}
       <div class="btn-row">
         <button class="btn btn-sm" onclick="document.getElementById('ask-obs-wrap').style.display='block'">Obsidian 저장</button>
       </div>
     </div>`;
+    resultEl.querySelector('#ask-answer-text').textContent = parsed.answer || '';
     if (parsed.obsidian) document.getElementById('ask-obs').value = parsed.obsidian;
   } catch(e) { document.getElementById('ask-result').innerHTML = `<div class="card" style="color:var(--danger);font-size:13px">오류: ${e.message}</div>`; }
   document.getElementById('ask-loading').style.display = 'none';
@@ -696,6 +716,7 @@ function copyObs() { navigator.clipboard.writeText(document.getElementById('ask-
 
 // ── Init ──────────────────────────────────────────────────────
 loadProfile(); loadPrefs();
+(function(){ const el = document.getElementById('gist-id-input'); if (el && gistId) el.value = gistId; })();
 if (!LS.get('stack')) {
   LS.set('stack',[
     {name:'C++ / MFC',level:'전문가',desc:'주력 언어, 업무 핵심'},
