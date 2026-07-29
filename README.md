@@ -56,6 +56,15 @@ AI 사이트 접속 (claude.ai / chatgpt.com / gemini.google.com)
 
 ---
 
+## 공식 벤더 기능과의 차이 (2026-07 기준)
+
+2026년 3월부터 Claude(`claude.com/import-memory`, 실험적)와 Gemini(전체 대화기록 ZIP 가져오기, `gemini.google.com/import`)가 자체 크로스벤더 메모리·대화 이전 기능을 제공하기 시작했습니다. 단순히 "다른 AI에서 쓰던 내용을 한 번 옮기기"만 필요하다면 그 공식 기능으로 충분할 수 있습니다.
+
+이 프로젝트는 다른 문제를 풉니다 — **한 번 옮기고 끝**이 아니라, 하나의 소스(GitHub Gist)를 계속 최신 상태로 유지하면서 Claude/ChatGPT/Gemini/Perplexity 어디서든 매번 클릭 한 번으로 같은 컨텍스트를 주입합니다. 공식 기능은 벤더 간 1회성 이전(migration)이고, 이 확장은 상시 동기화(sync)에 가깝습니다.
+
+- 한 번만 옮기면 된다 → 공식 Import 기능(Claude/Gemini)을 먼저 확인
+- 여러 AI를 계속 병행해서 쓰고, 프로필/스택/노트를 한 곳에서 갱신하고 싶다 → 이 프로젝트 유지
+
 ## 데이터 저장 위치
 
 | 데이터 | 저장 위치 | 비용 |
