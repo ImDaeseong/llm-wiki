@@ -5,7 +5,6 @@
   "description": "나의 LLM WIKI 컨텍스트를 AI 사이트에 자동 주입하고 브라우저에서 지식을 캡처합니다",
   "permissions": [
     "storage",
-    "activeTab",
     "contextMenus",
     "alarms"
   ],
