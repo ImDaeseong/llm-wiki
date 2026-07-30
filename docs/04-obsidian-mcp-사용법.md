@@ -37,8 +37,11 @@ Claude Desktop 설정 파일을 엽니다.
 {
   "mcpServers": {
     "obsidian": {
-      "command": "npx",
+      "command": "cmd",
       "args": [
+        "/c",
+        "npx",
+        "-y",
         "@modelcontextprotocol/server-filesystem",
         "C:/Users/사용자명/Documents/ObsidianVault"
       ]
@@ -85,6 +88,9 @@ Obsidian MCP + 크롬 확장을 함께 사용하는 권장 워크플로우:
 3. **Obsidian Vault에 붙여넣기** → Claude Desktop에서 Vault 검색 가능
 
 AI에게 묻기 페이지의 **Obsidian 저장** 버튼을 누르면 Claude의 답변을 Obsidian 마크다운 형식으로 변환해 복사할 수 있습니다.
+
+더 나아가 Vault를 카파시(Andrej Karpathy) 방식의 자가 관리형 위키로 운영하고 싶다면
+[06-카파시-llm-wiki-graphify.md](06-카파시-llm-wiki-graphify.md) 참고.
 
 ---
 
