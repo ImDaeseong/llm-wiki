@@ -21,7 +21,7 @@ AI 툴을 쓸 때마다 "나는 VC++ 개발자입니다, Visual Studio를 씁니
 | `index.html` | WIKI 웹 앱 (GitHub Pages로 서비스) |
 | `wiki-extension/` | 크롬 확장 — AI 사이트 자동 컨텍스트 주입 |
 | `claude-projects/` | Claude Projects용 컨텍스트 파일 |
-| `obsidian-mcp/` | Obsidian MCP 설정 템플릿 |
+| `obsidian-mcp/` | Obsidian MCP 설정 템플릿 + 카파시 방식 LLM Wiki 에이전트 지침 |
 | `docs/` | 상세 설치 및 사용 가이드 |
 
 ---
@@ -40,8 +40,11 @@ AI 툴을 쓸 때마다 "나는 VC++ 개발자입니다, Visual Studio를 씁니
 ### 4단계 — Obsidian MCP 연동 (선택)
 → [04-obsidian-mcp-사용법.md](docs/04-obsidian-mcp-사용법.md)
 
-### 집 ↔ 회사 데이터 동기화
+### 5단계 — 집 ↔ 회사 데이터 동기화 (선택)
 → [05-집회사-동기화.md](docs/05-집회사-동기화.md)
+
+### 6단계 — 카파시 LLM Wiki 에이전트 (선택, Claude Desktop 전용)
+→ [06-카파시-llm-wiki-graphify.md](docs/06-카파시-llm-wiki-graphify.md)
 
 ---
 
@@ -65,6 +68,8 @@ AI 사이트 접속 (claude.ai / chatgpt.com / gemini.google.com)
 - 한 번만 옮기면 된다 → 공식 Import 기능(Claude/Gemini)을 먼저 확인
 - 여러 AI를 계속 병행해서 쓰고, 프로필/스택/노트를 한 곳에서 갱신하고 싶다 → 이 프로젝트 유지
 
+---
+
 ## 데이터 저장 위치
 
 | 데이터 | 저장 위치 | 비용 |
@@ -72,3 +77,14 @@ AI 사이트 접속 (claude.ai / chatgpt.com / gemini.google.com)
 | 노트, 프로필, 프로젝트 | GitHub Gist (비공개) | 무료 |
 | WIKI 앱 | GitHub Pages | 무료 |
 | API 키 | 브라우저 메모리 (저장 안 됨) | — |
+
+---
+
+## 검증
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/validate_repo.ps1
+```
+
+JSON·JavaScript 구문, 확장 참조 파일, Markdown/HTML 로컬 링크, UTF-8, 예제 비밀값과
+Obsidian MCP 설정·문서의 일치 여부를 검사합니다.
