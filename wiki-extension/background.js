@@ -1,6 +1,25 @@
 // background.js
+importScripts('wiki-core.js');
 
 const GIST_FILENAME = 'llm-wiki-data.json';
+
+async function getWikiSettings() {
+  const [{ wikiSettings = {} }, { wikiAuth = {} }] = await Promise.all([
+    chrome.storage.local.get('wikiSettings'),
+    chrome.storage.session.get('wikiAuth'),
+  ]);
+  if (!wikiAuth.gistToken && wikiSettings.gistToken) {
+    await chrome.storage.session.set({ wikiAuth: { gistToken: wikiSettings.gistToken } });
+    const { gistToken: _removed, ...safeSettings } = wikiSettings;
+    await chrome.storage.local.set({ wikiSettings: safeSettings });
+    return { ...safeSettings, gistToken: wikiSettings.gistToken };
+  }
+  return { ...wikiSettings, gistToken: wikiAuth.gistToken };
+}
+
+function logFailure(callSite, error) {
+  console.error(`[${new Date().toISOString()}] ${callSite} ${WikiCore.classifyFailure(error)}`, error);
+}
 
 // 설치/업데이트 시 컨텍스트 메뉴 + 주기 알람 등록
 chrome.runtime.onInstalled.addListener(() => {
@@ -19,7 +38,7 @@ chrome.runtime.onInstalled.addListener(() => {
 // 1시간 주기 자동 갱신
 chrome.alarms.onAlarm.addListener(alarm => {
   if (alarm.name === 'refreshWiki') {
-    fetchWikiData().catch(() => {});
+    fetchWikiData().catch(error => logFailure('refreshWiki', error));
   }
 });
 
@@ -32,7 +51,8 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       chrome.action.setBadgeBackgroundColor({ color: '#0F6E56' });
       setTimeout(() => chrome.action.setBadgeText({ text: '' }), 2500);
     })
-    .catch(() => {
+    .catch(error => {
+      logFailure('contextMenu.appendNote', error);
       chrome.action.setBadgeText({ text: '!' });
       chrome.action.setBadgeBackgroundColor({ color: '#A32D2D' });
       setTimeout(() => chrome.action.setBadgeText({ text: '' }), 2500);
@@ -62,7 +82,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 });
 
 async function fetchWikiData() {
-  const { wikiSettings } = await chrome.storage.local.get('wikiSettings');
+  const wikiSettings = await getWikiSettings();
   if (!wikiSettings?.gistToken || !wikiSettings?.gistId) {
     throw new Error('Gist 설정이 없습니다. 팝업에서 설정하세요.');
   }
@@ -71,37 +91,17 @@ async function fetchWikiData() {
   });
   if (!res.ok) throw new Error('Gist 접근 실패: HTTP ' + res.status);
   const json = await res.json();
-  const content = json.files[GIST_FILENAME]?.content;
-  if (!content) throw new Error('WIKI 데이터 파일 없음');
-  const data = JSON.parse(content);
+  const data = WikiCore.mergeGistData(json.files, GIST_FILENAME);
   await chrome.storage.local.set({ wikiData: data, wikiCachedAt: Date.now() });
   return data;
 }
 
 async function appendNote(title, body, url) {
-  const { wikiSettings } = await chrome.storage.local.get('wikiSettings');
+  const wikiSettings = await getWikiSettings();
   if (!wikiSettings?.gistToken || !wikiSettings?.gistId) {
     throw new Error('Gist 설정 없음 — 팝업에서 Token과 Gist ID를 먼저 입력하세요.');
   }
-  // 다기기 덮어쓰기 방지: 추가 전 최신 데이터를 먼저 가져옴
-  try { await fetchWikiData(); } catch {}
-  const { wikiData } = await chrome.storage.local.get('wikiData');
-
-  let hostname = 'unknown';
-  try { hostname = new URL(url).hostname.replace('www.', ''); } catch {}
-
-  const note = {
-    id: Date.now(),
-    title: (title || '캡처').slice(0, 60),
-    cat: '캡처',
-    body,
-    tags: [hostname],
-    date: new Date().toISOString().slice(0, 10),
-    source: url,
-  };
-
-  const notes = [...(wikiData?.notes || []), note];
-  const newData = { ...wikiData, notes, saved_at: new Date().toISOString() };
+  const note = WikiCore.createNote(title, body, url, new Date(), () => crypto.randomUUID());
 
   const res = await fetch(`https://api.github.com/gists/${wikiSettings.gistId}`, {
     method: 'PATCH',
@@ -109,11 +109,9 @@ async function appendNote(title, body, url) {
       Authorization: `token ${wikiSettings.gistToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      files: { [GIST_FILENAME]: { content: JSON.stringify(newData, null, 2) } },
-    }),
+    body: JSON.stringify(WikiCore.buildNotePatch(note)),
   });
 
   if (!res.ok) throw new Error('Gist 저장 실패: HTTP ' + res.status);
-  await chrome.storage.local.set({ wikiData: newData, wikiCachedAt: Date.now() });
+  await fetchWikiData();
 }

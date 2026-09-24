@@ -70,10 +70,19 @@
 <div id="token-info" style="font-size:11px;color:#9a9990;margin-top:4px;display:none"></div>
 
 <script>
-// 저장된 설정 불러오기
-chrome.storage.local.get(['wikiSettings','wikiCachedAt','wikiData'], r => {
+// 일반 설정은 로컬에, 토큰은 브라우저 세션에만 보관합니다.
+Promise.all([
+  chrome.storage.local.get(['wikiSettings','wikiCachedAt','wikiData']),
+  chrome.storage.session.get('wikiAuth'),
+]).then(([r, authResult]) => {
   const s = r.wikiSettings || {};
-  if (s.gistToken) document.getElementById('gist-token').value = s.gistToken;
+  const token = authResult.wikiAuth?.gistToken || s.gistToken || '';
+  if (token) document.getElementById('gist-token').value = token;
+  if (!authResult.wikiAuth?.gistToken && s.gistToken) {
+    chrome.storage.session.set({ wikiAuth: { gistToken: s.gistToken } });
+    const { gistToken: _removed, ...safeSettings } = s;
+    chrome.storage.local.set({ wikiSettings: safeSettings });
+  }
   if (s.gistId)    document.getElementById('gist-id').value    = s.gistId;
   const inc = s.include || {};
   ['profile','stack','prefs','projects','notes'].forEach(k => {
@@ -96,11 +105,12 @@ function saveSettings() {
   const token = document.getElementById('gist-token').value.trim();
   const gistId = document.getElementById('gist-id').value.trim();
   if (!token) { setStatus('Token을 입력하세요', 'err'); return; }
-  chrome.storage.local.get('wikiSettings', r => {
+  chrome.storage.local.get('wikiSettings', async r => {
     const prev = r.wikiSettings || {};
-    chrome.storage.local.set({ wikiSettings: { ...prev, gistToken: token, gistId } }, () => {
-      setStatus('설정 저장됨', 'ok');
-    });
+    const { gistToken: _removed, ...safeSettings } = prev;
+    await chrome.storage.session.set({ wikiAuth: { gistToken: token } });
+    await chrome.storage.local.set({ wikiSettings: { ...safeSettings, gistId } });
+    setStatus('설정 저장됨 — 토큰은 브라우저 종료 시 삭제됩니다', 'ok');
   });
 }
 
