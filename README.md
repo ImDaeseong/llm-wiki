@@ -21,6 +21,13 @@ AI 툴을 쓸 때마다 "나는 VC++ 개발자입니다, Visual Studio를 씁니
 | `claude-projects/` | Claude Projects용 컨텍스트 파일 |
 | `obsidian-mcp/` | Obsidian MCP 설정 템플릿 + 카파시 방식 LLM Wiki 에이전트 지침 |
 | `docs/` | 상세 설치 및 사용 가이드 |
+| `career-context.js` | 공개 이력과 실제 저장소에서 정리한 경력·최근 AI 개발 포트폴리오 초기 컨텍스트 |
+| `ai-provider.js` | `AI에게 묻기`의 Anthropic/OpenAI 요청·응답 형식 분리 |
+
+초기 실행 시 `career-context.js`의 공개 경력 사실과 최근 AI 개발 포트폴리오를 브라우저
+데이터에 병합합니다. 사용자가 직접 작성한 값과 프로젝트는 유지하고, 비어 있는 항목과
+확인된 누락 항목만 채웁니다.
+이메일 같은 연락처는 AI 컨텍스트에 포함하지 않습니다.
 
 ---
 
@@ -34,6 +41,7 @@ AI 툴을 쓸 때마다 "나는 VC++ 개발자입니다, Visual Studio를 씁니
 | 4 (선택) | Obsidian MCP 연동 | [04-obsidian-mcp-사용법.md](docs/04-obsidian-mcp-사용법.md) |
 | 5 (선택) | 집 ↔ 회사 데이터 동기화 | [05-집회사-동기화.md](docs/05-집회사-동기화.md) |
 | 6 (선택, Claude Desktop 전용) | 카파시 LLM Wiki 에이전트 | [06-카파시-llm-wiki-graphify.md](docs/06-카파시-llm-wiki-graphify.md) |
+| 참고 | 공개 경력 컨텍스트 범위·병합 규칙 | [07-경력-컨텍스트.md](docs/07-경력-컨텍스트.md) |
 
 ---
 

@@ -176,6 +176,10 @@
 
     if (inc.profile && p.name) {
       ctx += `## 나의 프로필\n- 역할: ${p.name}\n- 업무: ${p.role || ''}\n- 경력: ${p.exp || ''}\n- IDE: ${p.ide || ''}\n- 언어: ${p.lang || ''}\n`;
+      if (p.education) ctx += `- 학력: ${p.education}\n`;
+      if (p.cert) ctx += `- 자격: ${p.cert}\n`;
+      if (p.current) ctx += `- 현재 개발 중심: ${p.current}\n`;
+      if (p.highlights) ctx += `\n### 주요 경력\n${p.highlights.split('\n').map(item => `- ${item}`).join('\n')}\n`;
       if (p.style) ctx += `\n### 코딩 스타일\n${p.style}\n`;
       if (p.ans)   ctx += `\n### 답변 선호\n${p.ans}\n`;
       ctx += '\n';
@@ -187,8 +191,8 @@
       ctx += `## AI 공통 지침\n${prefs.common}\n\n`;
     }
     if (inc.projects && projects.length) {
-      const active = projects.filter(pr => pr.status === '진행중');
-      if (active.length) ctx += `## 진행 중인 프로젝트\n${active.map(pr => `- ${pr.name}[${pr.stack}]: ${pr.desc}`).join('\n')}\n\n`;
+      const active = projects.filter(pr => ['진행중', '최근 개발'].includes(pr.status));
+      if (active.length) ctx += `## 최근·진행 프로젝트\n${active.map(pr => `- ${pr.name}[${pr.stack}]: ${pr.desc}`).join('\n')}\n\n`;
     }
     if (inc.notes && notes.length) {
       const safeNotes = WikiCore.selectContextNotes(notes);
