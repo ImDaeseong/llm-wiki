@@ -23,7 +23,7 @@ foreach ($relativePath in $jsonFiles) {
         ConvertFrom-Json | Out-Null
 }
 
-foreach ($relativePath in @("wiki-extension/background.js", "wiki-extension/content_script.js", "wiki-extension/wiki-core.js")) {
+foreach ($relativePath in @("ai-provider.js", "career-context.js", "wiki-extension/background.js", "wiki-extension/content_script.js", "wiki-extension/wiki-core.js")) {
     & node --check (Join-Path $repoRoot $relativePath)
     if ($LASTEXITCODE -ne 0) {
         throw "JavaScript syntax check failed: $relativePath"
@@ -33,6 +33,16 @@ foreach ($relativePath in @("wiki-extension/background.js", "wiki-extension/cont
 & node --test (Join-Path $repoRoot "tests/wiki-core.test.js")
 if ($LASTEXITCODE -ne 0) {
     throw "Extension regression tests failed."
+}
+
+& node --test (Join-Path $repoRoot "tests/career-context.test.js")
+if ($LASTEXITCODE -ne 0) {
+    throw "Career context regression tests failed."
+}
+
+& node --test (Join-Path $repoRoot "tests/ai-provider.test.js")
+if ($LASTEXITCODE -ne 0) {
+    throw "AI provider regression tests failed."
 }
 
 $manifest = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $repoRoot "wiki-extension/manifest.json") |

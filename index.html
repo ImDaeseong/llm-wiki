@@ -144,7 +144,11 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
     <label style="margin-top:8px">Gist ID <span style="font-weight:400;font-size:10px">(다기기 동기화 시 입력)</span></label>
     <input id="gist-id-input" type="text" style="width:100%;font-size:11px;font-family:monospace;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);margin-bottom:6px" placeholder="저장 시 자동 설정 — 타기기에서 직접 입력">
     <label style="margin-top:8px">Anthropic API Key</label>
-    <input id="claude-key" type="password" placeholder="sk-ant-...">
+    <input id="claude-key" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+    <label style="margin-top:8px">OpenAI API Key</label>
+    <input id="openai-key" type="password" placeholder="sk-..." autocomplete="off" spellcheck="false">
+    <button class="btn btn-sm" type="button" onclick="clearEphemeralKeys()" style="width:100%;margin-top:6px">API 키 즉시 지우기</button>
+    <div style="font-size:10px;line-height:1.45;color:var(--text3);margin-top:6px">API 키는 저장·동기화하지 않으며 요청 완료 직후와 새로고침·탭 종료 시 폐기됩니다. 브라우저 직접 입력은 실행 중 탈취 위험이 있어 개인 로컬 환경에서만 사용하세요.</div>
     <div class="sync-row">
       <button class="btn btn-sm" onclick="syncSave()" style="flex:1">저장</button>
       <button class="btn btn-sm" onclick="syncLoad()" style="flex:1">불러오기</button>
@@ -164,6 +168,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
     <div class="field"><label>주요 업무</label><input id="p-role" placeholder="예: MFC 기반 산업용 SW 개발, 유지보수"></div>
     <div class="field"><label>경력 / 전문 분야</label><input id="p-exp" placeholder="예: VC++ 15년, MFC 윈도우 애플리케이션 전문"></div>
     <div class="field"><label>회사 / 도메인</label><input id="p-company" placeholder="예: 제조업 자동화 솔루션 회사"></div>
+    <div class="field"><label>학력</label><input id="p-education" placeholder="학교·전공·기간"></div>
+    <div class="field"><label>자격</label><input id="p-cert" placeholder="자격증"></div>
+    <div class="field"><label>현재 개발 중심</label><textarea id="p-current" placeholder="최근 집중하고 있는 개발 영역을 입력하세요"></textarea></div>
+    <div class="field"><label>주요 경력 요약</label><textarea id="p-highlights" placeholder="검증된 대표 경력을 한 줄씩 입력하세요"></textarea></div>
   </div>
   <div class="card">
     <div class="card-title">개발 환경 <span class="badge badge-teal">환경</span></div>
@@ -321,8 +329,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 
 <!-- ASK -->
 <div id="page-ask" style="display:none">
-  <div class="page-header"><h2>AI에게 묻기</h2><p>나의 WIKI 컨텍스트를 자동으로 포함해서 Claude에게 질문합니다.</p></div>
+  <div class="page-header"><h2>AI에게 묻기</h2><p>Anthropic 또는 OpenAI를 선택해 WIKI 컨텍스트와 함께 질문합니다.</p></div>
   <div class="card">
+    <div class="field"><label>AI 제공자</label><select id="ask-provider"><option value="anthropic">Anthropic (Claude)</option><option value="openai">OpenAI (GPT)</option></select></div>
     <div class="field"><textarea id="ask-q" rows="3" placeholder="무엇이든 물어보세요. 나의 환경과 스택을 이미 알고 있는 상태로 답변합니다..."></textarea></div>
     <div class="btn-row"><button class="btn btn-primary" onclick="askAI()">질문하기 →</button></div>
     <div id="ask-loading" class="loading-row" style="display:none"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>답변 생성 중...</span></div>
@@ -341,6 +350,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 </div>
 <div id="toast"></div>
 
+<script src="career-context.js"></script>
+<script src="ai-provider.js"></script>
 <script>
 // ── Storage ──────────────────────────────────────────────────
 const LS = {
@@ -355,6 +366,18 @@ let gistId = LS.get('gist_id') || '';
 
 function getToken() { return document.getElementById('gist-token').value.trim(); }
 function getClaudeKey() { return document.getElementById('claude-key').value.trim(); }
+function getOpenAIKey() { return document.getElementById('openai-key').value.trim(); }
+function clearProviderKey(provider) {
+  const input = document.getElementById(provider === 'openai' ? 'openai-key' : 'claude-key');
+  if (input) input.value = '';
+}
+function clearEphemeralKeys() {
+  ['gist-token', 'claude-key', 'openai-key'].forEach(id => {
+    const input = document.getElementById(id);
+    if (input) input.value = '';
+  });
+}
+window.addEventListener('pagehide', clearEphemeralKeys);
 
 function onTokenInput() {
   const t = getToken();
@@ -471,14 +494,14 @@ function toast(msg) {
 // ── Profile ───────────────────────────────────────────────────
 function loadProfile() {
   const d = LS.get('profile') || {};
-  ['name','role','exp','company','ide','lang','os','vcs','tools','style','ans'].forEach(k => {
+  ['name','role','exp','company','education','cert','current','highlights','ide','lang','os','vcs','tools','style','ans'].forEach(k => {
     const el = document.getElementById('p-'+k);
     if (el && d[k]) el.value = d[k];
   });
 }
 function saveProfile() {
   const d = {};
-  ['name','role','exp','company','ide','lang','os','vcs','tools','style','ans'].forEach(k => {
+  ['name','role','exp','company','education','cert','current','highlights','ide','lang','os','vcs','tools','style','ans'].forEach(k => {
     d[k] = document.getElementById('p-'+k)?.value || '';
   });
   LS.set('profile', d); toast('프로필 저장됨');
@@ -644,11 +667,11 @@ function getContext() {
   const projects = LS.get('projects') || [];
   const notes = LS.get('notes') || [];
   let ctx = '';
-  if (p.name) ctx += `## 나의 기본 정보\n- 역할: ${p.name}\n- 업무: ${p.role||''}\n- 경력: ${p.exp||''}\n- IDE: ${p.ide||''}\n- 언어: ${p.lang||''}\n\n`;
+  if (p.name) ctx += `## 나의 기본 정보\n- 역할: ${p.name}\n- 업무: ${p.role||''}\n- 경력: ${p.exp||''}\n- 학력: ${p.education||''}\n- 자격: ${p.cert||''}\n- 현재 개발 중심: ${p.current||''}\n- IDE: ${p.ide||''}\n- 언어: ${p.lang||''}\n${p.highlights?`\n### 주요 경력\n${p.highlights.split('\n').map(item=>`- ${item}`).join('\n')}\n`:''}\n`;
   if (p.style) ctx += `## 코딩 스타일\n${p.style}\n\n`;
   if (stack.length) ctx += `## 기술 스택\n${stack.map(s=>`- ${s.name}(${s.level}): ${s.desc}`).join('\n')}\n\n`;
   if (prefs.common) ctx += `## AI 지침\n${prefs.common}\n\n`;
-  if (projects.length) ctx += `## 진행 프로젝트\n${projects.filter(p=>p.status==='진행중').map(p=>`- ${p.name}[${p.stack}]: ${p.desc}`).join('\n')}\n\n`;
+  if (projects.length) ctx += `## 최근·진행 프로젝트\n${projects.filter(p=>['진행중','최근 개발'].includes(p.status)).map(p=>`- ${p.name}[${p.stack}]: ${p.desc}`).join('\n')}\n\n`;
   if (notes.length) ctx += `## 최근 노트\n${notes.slice(-5).map(n=>`- [${n.cat}] ${n.title}`).join('\n')}\n\n`;
   return ctx;
 }
@@ -667,6 +690,10 @@ function buildPrompt() {
   if (goal) prompt += `## 이번 대화 목적\n${goal}\n\n---\n\n`;
   if (document.getElementById('inc-profile')?.checked && p.name) {
     prompt += `## 나는 누구인가\n- 역할: ${p.name}\n- 업무: ${p.role||'-'}\n- 경력: ${p.exp||'-'}\n- IDE: ${p.ide||'-'}\n- 언어: ${p.lang||'-'}\n`;
+    if (p.education) prompt += `- 학력: ${p.education}\n`;
+    if (p.cert) prompt += `- 자격: ${p.cert}\n`;
+    if (p.current) prompt += `- 현재 개발 중심: ${p.current}\n`;
+    if (p.highlights) prompt += `\n### 주요 경력\n${p.highlights.split('\n').map(item=>`- ${item}`).join('\n')}\n`;
     if (p.style) prompt += `\n### 코딩 스타일\n${p.style}\n`;
     if (p.ans) prompt += `\n### 답변 선호\n${p.ans}\n`;
     prompt += '\n';
@@ -688,7 +715,7 @@ function copyPrompt() {
 }
 function copySection(sec) {
   let text = '';
-  if (sec==='profile') { const p=LS.get('profile')||{}; text=`역할: ${p.name}\n업무: ${p.role}\n경력: ${p.exp}\nIDE: ${p.ide}\n언어: ${p.lang}\n코딩스타일: ${p.style}`; }
+  if (sec==='profile') { const p=LS.get('profile')||{}; text=`역할: ${p.name}\n업무: ${p.role}\n경력: ${p.exp}\n학력: ${p.education||''}\n자격: ${p.cert||''}\n현재 개발 중심: ${p.current||''}\n주요 경력:\n${p.highlights||''}\nIDE: ${p.ide}\n언어: ${p.lang}\n코딩스타일: ${p.style}`; }
   else if (sec==='stack') { const s=LS.get('stack')||[]; text='기술 스택:\n'+s.map(i=>`- ${i.name}(${i.level}): ${i.desc}`).join('\n'); }
   else if (sec==='prefs') { text=(LS.get('prefs')||{}).common||''; }
   else if (sec==='projects') { const p=LS.get('projects')||[]; text=p.map(i=>`- ${i.name}[${i.status}]: ${i.desc}`).join('\n'); }
@@ -697,26 +724,24 @@ function copySection(sec) {
 
 // ── Ask AI ────────────────────────────────────────────────────
 async function askAI() {
-  const key = getClaudeKey();
+  const provider = document.getElementById('ask-provider').value;
+  const key = provider === 'openai' ? getOpenAIKey() : getClaudeKey();
   const q = document.getElementById('ask-q').value.trim();
-  if (!key) { toast('Anthropic API 키를 입력하세요'); return; }
+  if (!key) { toast(`${AiProvider.PROVIDERS[provider].label} API 키를 입력하세요`); return; }
   if (!q) { toast('질문을 입력하세요'); return; }
   document.getElementById('ask-loading').style.display = 'flex';
   document.getElementById('ask-result').innerHTML = '';
   document.getElementById('ask-obs-wrap').style.display = 'none';
   const today = new Date().toISOString().split('T')[0];
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:1500,
-        system:`세컨드 브레인 AI 어시스턴트. JSON만 반환:{"answer":"답변(마크다운)","keyPoints":["핵심1","핵심2"],"obsidian":"---\\ndate:${today}\\ntags:[]\\n---\\n# 제목\\n\\n내용"}`,
-        messages:[{role:'user',content:getContext()+'\n\n질문: '+q}]})
-    });
+    const system = `세컨드 브레인 AI 어시스턴트. JSON만 반환:{"answer":"답변(마크다운)","keyPoints":["핵심1","핵심2"],"obsidian":"---\\ndate:${today}\\ntags:[]\\n---\\n# 제목\\n\\n내용"}`;
+    const request = AiProvider.buildRequest(provider, key, system, getContext()+'\n\n질문: '+q);
+    const res = await fetch(request.url, request.options);
     const data = await res.json();
-    let parsed;
-    try { parsed = JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim()); }
-    catch { parsed = { answer: data.content[0].text, keyPoints:[], obsidian:'' }; }
+    if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}`);
+    const text = AiProvider.responseText(provider, data);
+    if (!text) throw new Error('AI 응답 본문이 없습니다.');
+    const parsed = AiProvider.parseAssistantPayload(text);
     const kp = (parsed.keyPoints||[]).map(p=>`<li style="margin-bottom:4px">${esc(p)}</li>`).join('');
     const resultEl = document.getElementById('ask-result');
     resultEl.innerHTML = `<div class="card">
@@ -728,23 +753,28 @@ async function askAI() {
     </div>`;
     resultEl.querySelector('#ask-answer-text').textContent = parsed.answer || '';
     if (parsed.obsidian) document.getElementById('ask-obs').value = parsed.obsidian;
-  } catch(e) { document.getElementById('ask-result').innerHTML = `<div class="card" style="color:var(--danger);font-size:13px">오류: ${e.message}</div>`; }
-  document.getElementById('ask-loading').style.display = 'none';
+  } catch(e) {
+    document.getElementById('ask-result').innerHTML = `<div class="card" style="color:var(--danger);font-size:13px">오류: ${e.message}</div>`;
+  } finally {
+    clearProviderKey(provider);
+    document.getElementById('ask-loading').style.display = 'none';
+  }
 }
 function copyObs() { navigator.clipboard.writeText(document.getElementById('ask-obs').value).then(()=>toast('복사됨!')); }
 
 // ── Init ──────────────────────────────────────────────────────
+if (LS.get('career_context_version') !== CareerContext.CAREER_CONTEXT_VERSION) {
+  const merged = CareerContext.mergeCareerContext({
+    profile: LS.get('profile'),
+    prefs: LS.get('prefs'),
+    stack: LS.get('stack'),
+    projects: LS.get('projects'),
+  });
+  ['profile','prefs','stack','projects'].forEach(key => LS.set(key, merged[key]));
+  LS.set('career_context_version', CareerContext.CAREER_CONTEXT_VERSION);
+}
 loadProfile(); loadPrefs();
 (function(){ const el = document.getElementById('gist-id-input'); if (el && gistId) el.value = gistId; })();
-if (!LS.get('stack')) {
-  LS.set('stack',[
-    {name:'C++ / MFC',level:'전문가',desc:'주력 언어, 업무 핵심'},
-    {name:'Visual Studio',level:'전문가',desc:'VS 6.0 / 2008 / 2019 / 2022'},
-    {name:'Golang',level:'중급',desc:'서버/도구 개발'},
-    {name:'Python',level:'중급',desc:'자동화, 스크립트'},
-    {name:'Android',level:'입문',desc:'모바일 보조 개발'},
-  ]);
-}
 </script>
 </body>
 </html>
