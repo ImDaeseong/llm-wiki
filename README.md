@@ -1,5 +1,7 @@
 # 나의 LLM WIKI
 
+**🤔 [쉬운 설명 보기](ELI5.html)** — 비개발자를 위한 한 페이지 요약
+
 > Claude, ChatGPT, Gemini 등 **어떤 AI 툴에서도** 나의 컨텍스트를 자동으로 주입하는 개인 세컨드 브레인
 
 **WIKI 앱 바로가기 →** https://imdaeseong.github.io/llm-wiki/
