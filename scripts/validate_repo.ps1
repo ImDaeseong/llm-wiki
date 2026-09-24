@@ -23,11 +23,16 @@ foreach ($relativePath in $jsonFiles) {
         ConvertFrom-Json | Out-Null
 }
 
-foreach ($relativePath in @("wiki-extension/background.js", "wiki-extension/content_script.js")) {
+foreach ($relativePath in @("wiki-extension/background.js", "wiki-extension/content_script.js", "wiki-extension/wiki-core.js")) {
     & node --check (Join-Path $repoRoot $relativePath)
     if ($LASTEXITCODE -ne 0) {
         throw "JavaScript syntax check failed: $relativePath"
     }
+}
+
+& node --test (Join-Path $repoRoot "tests/wiki-core.test.js")
+if ($LASTEXITCODE -ne 0) {
+    throw "Extension regression tests failed."
 }
 
 $manifest = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $repoRoot "wiki-extension/manifest.json") |
@@ -53,6 +58,22 @@ foreach ($file in Get-ChildItem -Path $repoRoot -Recurse -File -Filter "*.html")
     foreach ($match in [regex]::Matches($text, "(?:src|href)=[`"']([^`"']+)[`"']")) {
         Resolve-LocalLink $file.DirectoryName $match.Groups[1].Value
     }
+}
+
+$appHtml = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $repoRoot "index.html")
+foreach ($requiredDesignContract in @(
+    '--accent-2:#00c4cc',
+    'class="brand-mark"',
+    '@media(prefers-reduced-motion:reduce)',
+    '@media(max-width:760px)',
+    '.sb-section{display:flex;overflow-x:auto'
+)) {
+    if (-not $appHtml.Contains($requiredDesignContract)) {
+        throw "Web app design contract missing: $requiredDesignContract"
+    }
+}
+if ($appHtml.Contains('#sidebar{display:none}')) {
+    throw "Mobile navigation must remain reachable."
 }
 
 $utf8 = [System.Text.UTF8Encoding]::new($false, $true)

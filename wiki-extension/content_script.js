@@ -191,7 +191,10 @@
       if (active.length) ctx += `## 진행 중인 프로젝트\n${active.map(pr => `- ${pr.name}[${pr.stack}]: ${pr.desc}`).join('\n')}\n\n`;
     }
     if (inc.notes && notes.length) {
-      ctx += `## 최근 노트\n${notes.slice(-5).map(n => `- [${n.cat}] ${n.title}`).join('\n')}\n\n`;
+      const safeNotes = WikiCore.selectContextNotes(notes);
+      if (safeNotes.length) {
+        ctx += `## 최근 노트\n${safeNotes.map(n => `- [${n.cat}] ${n.title}`).join('\n')}\n\n`;
+      }
     }
     ctx += '---\n위 컨텍스트를 기반으로 답변해주세요.\n\n';
     return ctx;
