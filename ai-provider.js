@@ -120,12 +120,20 @@
             answer: parsed.answer,
             keyPoints: Array.isArray(parsed.keyPoints) ? parsed.keyPoints : [],
             obsidian: typeof parsed.obsidian === 'string' ? parsed.obsidian : '',
+            truncated: false,
           };
         }
       } catch { /* Try the next safe fallback. */ }
     }
+    // Neither the full response nor its brace-trimmed substring parsed as
+    // JSON -- this is the character-scan recovery path, reached when the
+    // response was cut off (e.g. hit max_tokens) or otherwise malformed.
+    // `truncated: true` lets the caller tell the user their answer may be
+    // incomplete, instead of silently rendering a partial answer with no
+    // key points/Obsidian note as if it were a complete, successful reply
+    // (2026-09-26 independent review).
     const partialAnswer = extractJsonString(cleaned, 'answer');
-    return { answer: partialAnswer || cleaned, keyPoints: [], obsidian: '' };
+    return { answer: partialAnswer || cleaned, keyPoints: [], obsidian: '', truncated: true };
   }
 
   const api = { PROVIDERS, buildRequest, responseText, parseAssistantPayload };
