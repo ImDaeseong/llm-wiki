@@ -745,6 +745,7 @@ async function askAI() {
     const kp = (parsed.keyPoints||[]).map(p=>`<li style="margin-bottom:4px">${esc(p)}</li>`).join('');
     const resultEl = document.getElementById('ask-result');
     resultEl.innerHTML = `<div class="card">
+      ${parsed.truncated?`<div style="font-size:12px;color:var(--danger);margin-bottom:8px">⚠ 응답이 잘렸거나 형식이 예상과 달라 답변이 불완전할 수 있습니다. 핵심 요약과 Obsidian 저장이 비어 있을 수 있습니다.</div>`:''}
       <div id="ask-answer-text" style="font-size:14px;line-height:1.75;white-space:pre-wrap;color:var(--text2)"></div>
       ${kp?`<ul style="margin:12px 0 0 16px;font-size:13px;color:var(--text2)">${kp}</ul>`:''}
       <div class="btn-row">

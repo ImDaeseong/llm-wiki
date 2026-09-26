@@ -25,9 +25,10 @@ test('OpenAI request uses the Responses API and bearer authorization', () => {
 });
 
 test('assistant payload parser accepts JSON and fenced JSON', () => {
-  const expected = { answer: '정상 답변', keyPoints: ['핵심'], obsidian: '# 메모' };
-  assert.deepEqual(parseAssistantPayload(JSON.stringify(expected)), expected);
-  assert.deepEqual(parseAssistantPayload(`\`\`\`json\n${JSON.stringify(expected)}\n\`\`\``), expected);
+  const sent = { answer: '정상 답변', keyPoints: ['핵심'], obsidian: '# 메모' };
+  const expected = { ...sent, truncated: false };
+  assert.deepEqual(parseAssistantPayload(JSON.stringify(sent)), expected);
+  assert.deepEqual(parseAssistantPayload(`\`\`\`json\n${JSON.stringify(sent)}\n\`\`\``), expected);
 });
 
 test('truncated JSON displays the partial answer without exposing the JSON wrapper', () => {
@@ -35,6 +36,14 @@ test('truncated JSON displays the partial answer without exposing the JSON wrapp
   assert.equal(parsed.answer, '첫째 줄\n둘째 줄의 일부');
   assert.doesNotMatch(parsed.answer, /\{"answer"/);
   assert.deepEqual(parsed.keyPoints, []);
+  // 2026-09-26 독립 리뷰 발견: 이 복구 경로는 완전한 성공 응답과 똑같은 모양을
+  // 반환해서, 호출자가 잘림 여부를 구분할 방법이 전혀 없었다.
+  assert.equal(parsed.truncated, true, 'recovery path must flag the response as possibly incomplete');
+});
+
+test('a fully-parsed JSON response is never flagged as truncated', () => {
+  const parsed = parseAssistantPayload(JSON.stringify({ answer: '완전한 답변', keyPoints: [], obsidian: '' }));
+  assert.equal(parsed.truncated, false);
 });
 
 test('provider response text is normalized', () => {
