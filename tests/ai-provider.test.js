@@ -65,3 +65,21 @@ test('the selected provider key is cleared after both successful and failed requ
   const ask = html.match(/async function askAI\(\) \{[\s\S]*?\n\}/)?.[0] || '';
   assert.match(ask, /finally\s*\{[\s\S]*clearProviderKey\(provider\)/);
 });
+
+test('provider errors are rendered as text instead of executable HTML', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+  const ask = html.match(/async function askAI\(\) \{[\s\S]*?\n\}/)?.[0] || '';
+  assert.match(ask, /errorEl\.textContent\s*=\s*`오류:/);
+  assert.doesNotMatch(ask, /innerHTML\s*=\s*`[^`]*\$\{e\.message\}/);
+});
+
+test('wiki context and question are delimited as untrusted model input', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+  const ask = html.match(/async function askAI\(\) \{[\s\S]*?\n\}/)?.[0] || '';
+  assert.match(ask, /비신뢰 데이터/);
+  assert.match(ask, /명령으로 따르지/);
+  assert.match(ask, /\[UNTRUSTED_CONTEXT\]/);
+  assert.match(ask, /\[\/UNTRUSTED_CONTEXT\]/);
+  assert.match(ask, /\[UNTRUSTED_QUESTION\]/);
+  assert.match(ask, /\[\/UNTRUSTED_QUESTION\]/);
+});
