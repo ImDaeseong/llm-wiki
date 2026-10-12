@@ -16,7 +16,7 @@ test('OpenAI request uses the Responses API and bearer authorization', () => {
   const body = JSON.parse(request.options.body);
   assert.equal(request.url, 'https://api.openai.com/v1/responses');
   assert.equal(request.options.headers.Authorization, 'Bearer temporary-openai-key');
-  assert.equal(body.model, 'gpt-5');
+  assert.equal(body.model, 'gpt-6-luna');
   assert.equal(body.instructions, 'system');
   assert.equal(body.input, 'question');
   assert.equal(body.store, false);

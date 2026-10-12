@@ -9,7 +9,7 @@
     openai: {
       label: 'OpenAI',
       endpoint: 'https://api.openai.com/v1/responses',
-      model: 'gpt-5',
+      model: 'gpt-6-luna',
     },
   };
 
