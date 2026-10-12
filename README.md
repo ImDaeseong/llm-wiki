@@ -1,8 +1,8 @@
 # 나의 LLM WIKI
 
-**🤔 [쉬운 설명 보기](ELI5.html)** — 비개발자를 위한 한 페이지 요약
+> **핵심:** 사용자가 관리하는 맥락을 정본으로 삼아 여러 LLM에 필요한 범위만 전달합니다.
 
-**설계 문서:** [DESIGN.md](DESIGN.md) — 컨텍스트 흐름, 공개·비공개 경계, 공급자 연동
+[쉬운 설명](ELI5.html) · [구조와 설계](DESIGN.md)
 
 > Claude, ChatGPT, Gemini 등 **어떤 AI 툴에서도** 나의 컨텍스트를 자동으로 주입하는 개인 세컨드 브레인
 
@@ -76,6 +76,9 @@ AI 사이트 접속 (claude.ai / chatgpt.com / gemini.google.com)
 | 노트, 프로필, 프로젝트 | GitHub Gist (비공개) | 무료 |
 | WIKI 앱 | GitHub Pages | 무료 |
 | Gist 토큰 | 크롬 세션 저장소 (브라우저 종료 시 삭제) | — |
+| OpenAI·Anthropic API 키 | 현재 페이지의 비밀번호 입력 메모리만 사용; 요청 성공·실패 후 즉시 삭제 | 호출량에 따라 과금 |
+
+Gist 토큰과 OpenAI·Anthropic API 키는 저장소, Gist 데이터, localStorage에 기록하지 않습니다. AI 키는 공급자 요청에만 사용하고 성공·실패와 관계없이 입력란에서 즉시 지우며, 페이지를 닫을 때도 다시 지웁니다. GitHub Pages에는 키 값이나 키 파일을 배포하지 않습니다.
 
 캡처한 웹 콘텐츠는 신뢰되지 않은 외부 데이터로 표시합니다. Gist 토큰은 암호화되지 않는
 `chrome.storage.local`에 영구 저장하지 않으며, 브라우저를 다시 열면 다시 입력해야 합니다.
