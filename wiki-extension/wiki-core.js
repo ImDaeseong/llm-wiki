@@ -5,7 +5,7 @@
   function createNote(title, body, url, now = new Date(), idFactory) {
     const id = idFactory ? idFactory() : `${now.getTime()}-${Math.random().toString(16).slice(2)}`;
     let hostname = 'unknown';
-    try { hostname = new URL(url).hostname.replace(/^www\./, ''); } catch {}
+    try { hostname = new URL(url).hostname.replace(/^www\./, ''); } catch {} // qa:allow CWE-390 - an invalid URL keeps the unknown hostname default
     return {
       id,
       title: (title || '캡처').slice(0, 60),

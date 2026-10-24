@@ -123,7 +123,7 @@
             truncated: false,
           };
         }
-      } catch { /* Try the next safe fallback. */ }
+      } catch { /* Try the next safe fallback. */ } // qa:allow CWE-390 - JSON parse of a recovery candidate failed; the next fallback below is tried
     }
     // Neither the full response nor its brace-trimmed substring parsed as
     // JSON -- this is the character-scan recovery path, reached when the
