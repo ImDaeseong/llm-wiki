@@ -774,7 +774,7 @@ if (LS.get('career_context_version') !== CareerContext.CAREER_CONTEXT_VERSION) {
     prefs: LS.get('prefs'),
     stack: LS.get('stack'),
     projects: LS.get('projects'),
-  });
+  }, true);
   ['profile','prefs','stack','projects'].forEach(key => LS.set(key, merged[key]));
   LS.set('career_context_version', CareerContext.CAREER_CONTEXT_VERSION);
 }

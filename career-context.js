@@ -1,6 +1,6 @@
 // Fictionalized career seed for demonstrations; no real identity or contact details included.
 (function exposeCareerContext(root) {
-  const CAREER_CONTEXT_VERSION = 6;
+  const CAREER_CONTEXT_VERSION = 7;
   const CAREER_CONTEXT = {
     profile: {
       name: '김도윤 / 소프트웨어 엔지니어 (가상 인물)',
@@ -67,6 +67,7 @@
     name: '개인 프로젝트·AI 활용 개발 연구',
     desc: '개인 프로젝트 개발과 AI를 활용한 개발 방법 연구',
   };
+  const PERSONAL_PROFILE_FIELDS = ['name', 'exp', 'company', 'education', 'cert', 'highlights'];
 
   function mergeNamed(existing, incoming, removeLegacyDefaults = false) {
     const incomingByName = new Map(incoming.map(item => [item.name, item]));
@@ -91,8 +92,11 @@
     return result;
   }
 
-  function mergeCareerContext(current) {
+  function mergeCareerContext(current, replacePersonalProfile = false) {
     const profile = mergeNonEmpty(CAREER_CONTEXT.profile, current.profile);
+    if (replacePersonalProfile) {
+      PERSONAL_PROFILE_FIELDS.forEach(key => { profile[key] = CAREER_CONTEXT.profile[key]; });
+    }
     if (profile.highlights?.includes(STALE_ANDROID_HIGHLIGHT)) {
       profile.highlights = profile.highlights.replace(
         STALE_ANDROID_HIGHLIGHT,

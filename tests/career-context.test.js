@@ -65,6 +65,29 @@ test('migration fills blanks while preserving user-authored values', () => {
   assert.ok(merged.projects.some(item => item.name === '사용자 프로젝트'));
 });
 
+test('privacy migration replaces only personal profile fields', () => {
+  const merged = mergeCareerContext({
+    profile: {
+      name: '개인 이름', exp: '개인 경력', company: '개인 회사', education: '개인 학력',
+      cert: '개인 자격', highlights: '개인 주요 경력', role: '사용자 역할', ide: '사용자 IDE',
+    },
+    prefs: { common: '사용자 지침' },
+    stack: [{ name: '사용자 기술', level: '고급', desc: '보존' }],
+    projects: [{ name: '사용자 프로젝트', status: '진행중', stack: '', desc: '보존' }],
+  }, true);
+  assert.match(merged.profile.name, /가상 인물/);
+  assert.match(merged.profile.exp, /가상기업/);
+  assert.match(merged.profile.company, /가상기업/);
+  assert.match(merged.profile.education, /가상대학교/);
+  assert.match(merged.profile.cert, /세부 정보 비공개/);
+  assert.doesNotMatch(merged.profile.highlights, /개인 주요 경력/);
+  assert.equal(merged.profile.role, '사용자 역할');
+  assert.equal(merged.profile.ide, '사용자 IDE');
+  assert.equal(merged.prefs.common, '사용자 지침');
+  assert.ok(merged.stack.some(item => item.name === '사용자 기술'));
+  assert.ok(merged.projects.some(item => item.name === '사용자 프로젝트'));
+});
+
 test('migration replaces only the original sample stack', () => {
   const merged = mergeCareerContext({
     stack: [
