@@ -11,7 +11,7 @@
 
 ## 사용 방법
 
-1. https://imdaeseong.github.io/llm-wiki/ 접속
+1. 배포한 LLM WIKI 주소(예: https://example.github.io/llm-wiki/)에 접속
 2. 프롬프트 생성기 탭 클릭
 3. 원하는 항목 모두 체크
 4. 대상 AI: Claude 선택

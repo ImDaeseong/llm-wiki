@@ -6,7 +6,7 @@
 
 > Claude, ChatGPT, Gemini 등 **어떤 AI 툴에서도** 나의 컨텍스트를 자동으로 주입하는 개인 세컨드 브레인
 
-**WIKI 앱 바로가기 →** https://imdaeseong.github.io/llm-wiki/
+**WIKI 앱 주소 예시 →** https://example.github.io/llm-wiki/
 
 ---
 
@@ -25,13 +25,13 @@ AI 툴을 쓸 때마다 "나는 VC++ 개발자입니다, Visual Studio를 씁니
 | `claude-projects/` | Claude Projects용 컨텍스트 파일 |
 | `obsidian-mcp/` | Obsidian MCP 설정 템플릿 + 카파시 방식 LLM Wiki 에이전트 지침 |
 | `docs/` | 상세 설치 및 사용 가이드 |
-| `career-context.js` | 공개 이력과 실제 저장소에서 정리한 경력·최근 AI 개발 포트폴리오 초기 컨텍스트 |
+| `career-context.js` | 실제 개인을 식별할 수 없도록 허구화한 경력·최근 AI 개발 포트폴리오 초기 컨텍스트 |
 | `ai-provider.js` | `AI에게 묻기`의 Anthropic/OpenAI 요청·응답 형식 분리 |
 
-초기 실행 시 `career-context.js`의 공개 경력 사실과 최근 AI 개발 포트폴리오를 브라우저
+초기 실행 시 `career-context.js`의 허구 경력 예시와 최근 AI 개발 포트폴리오를 브라우저
 데이터에 병합합니다. 사용자가 직접 작성한 값과 프로젝트는 유지하고, 비어 있는 항목과
 확인된 누락 항목만 채웁니다.
-이메일 같은 연락처는 AI 컨텍스트에 포함하지 않습니다.
+실명·학교·회사·고객·연락처 같은 실제 개인 식별 정보는 AI 컨텍스트에 포함하지 않습니다.
 
 ---
 

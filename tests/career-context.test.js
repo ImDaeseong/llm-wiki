@@ -4,16 +4,16 @@ const { CAREER_CONTEXT, mergeCareerContext } = require('../career-context.js');
 const fs = require('node:fs');
 const path = require('node:path');
 
-test('career context covers public profile, education, credential, skills, and projects', () => {
-  assert.match(CAREER_CONTEXT.profile.exp, /25년 경력/);
-  assert.match(CAREER_CONTEXT.profile.education, /컴퓨터네트워크전공/);
-  assert.equal(CAREER_CONTEXT.profile.cert, '정보처리기사');
+test('career context covers fictional profile, education, credential, skills, and projects', () => {
+  assert.match(CAREER_CONTEXT.profile.exp, /20년 이상 경력/);
+  assert.match(CAREER_CONTEXT.profile.education, /네트워크전공/);
+  assert.match(CAREER_CONTEXT.profile.cert, /세부 정보 비공개/);
   const android = CAREER_CONTEXT.stack.find(item => item.name === 'Java / Kotlin / Android');
   assert.equal(android.level, '상용 개발·운영');
   assert.match(android.desc, /상용 앱 3개 개발·운영/);
   assert.ok(CAREER_CONTEXT.stack.filter(item => item !== android).every(item => item.level === '경력 확인'));
   assert.ok(CAREER_CONTEXT.stack.some(item => item.name.includes('IOCP')));
-  assert.ok(CAREER_CONTEXT.projects.some(item => item.name === '해외 지역 서비스 구축'));
+  assert.ok(CAREER_CONTEXT.projects.some(item => item.name === '해외 서비스 구축'));
   assert.match(CAREER_CONTEXT.profile.current, /AI 바이브 코딩/);
   const recentProjects = CAREER_CONTEXT.projects.filter(item => item.status === '최근 개발');
   assert.deepEqual(recentProjects.map(item => item.name), [
@@ -25,7 +25,21 @@ test('career context covers public profile, education, credential, skills, and p
 
 test('career context excludes unnecessary contact details', () => {
   const serialized = JSON.stringify(CAREER_CONTEXT);
-  assert.doesNotMatch(serialized, /@|mailto:|cs93059/);
+  assert.doesNotMatch(serialized, /@|mailto:|C:\\Users\\/);
+  assert.match(CAREER_CONTEXT.profile.name, /가상 인물/);
+  assert.ok(CAREER_CONTEXT.profile.company.split(',').every(item => item.trim().startsWith('가상기업')));
+  assert.match(CAREER_CONTEXT.profile.education, /^가상대학교.+기간 비공개/);
+  assert.doesNotMatch(`${CAREER_CONTEXT.profile.exp}\n${CAREER_CONTEXT.profile.education}\n${CAREER_CONTEXT.profile.highlights}`, /(?:19|20)\d{2}[.~-]/);
+});
+
+test('published documentation uses only a non-personal example site address', () => {
+  const files = ['README.md', 'docs/01-설치가이드.md', 'claude-projects/my-wiki-context.md'];
+  for (const file of files) {
+    const content = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+    const hosts = [...content.matchAll(/https:\/\/([a-z0-9-]+\.github\.io)/gi)].map(match => match[1]);
+    assert.ok(hosts.length > 0, `${file}: example deployment URL missing`);
+    assert.ok(hosts.every(host => host === 'example.github.io'), `${file}: personal GitHub Pages host found`);
+  }
 });
 
 test('extension includes approved career fields but no contact fields', () => {
@@ -73,7 +87,7 @@ test('migration replaces the stale Android beginner classification', () => {
       name: 'Android O2O 서비스',
       stack: 'old',
       status: '완료',
-      desc: '가상 서비스 A·가상 서비스 G·가상 서비스 E·가상 서비스 F Pro와 주문·결제 연동 개발',
+      desc: 'Android O2O 서비스 4종과 주문·결제 연동 개발',
     }],
   });
   const android = merged.stack.find(item => item.name === 'Java / Kotlin / Android');
