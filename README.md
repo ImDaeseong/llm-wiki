@@ -6,7 +6,7 @@
 
 > Claude, ChatGPT, Gemini 등 **어떤 AI 툴에서도** 나의 컨텍스트를 자동으로 주입하는 개인 세컨드 브레인
 
-**WIKI 앱 주소 예시 →** https://example.github.io/llm-wiki/
+**WIKI 앱 바로가기 →** https://imdaeseong.github.io/llm-wiki/
 
 ---
 

@@ -32,13 +32,12 @@ test('career context excludes unnecessary contact details', () => {
   assert.doesNotMatch(`${CAREER_CONTEXT.profile.exp}\n${CAREER_CONTEXT.profile.education}\n${CAREER_CONTEXT.profile.highlights}`, /(?:19|20)\d{2}[.~-]/);
 });
 
-test('published documentation uses only a non-personal example site address', () => {
+test('published documentation keeps the verified deployment address', () => {
   const files = ['README.md', 'docs/01-설치가이드.md', 'claude-projects/my-wiki-context.md'];
   for (const file of files) {
     const content = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
-    const hosts = [...content.matchAll(/https:\/\/([a-z0-9-]+\.github\.io)/gi)].map(match => match[1]);
-    assert.ok(hosts.length > 0, `${file}: example deployment URL missing`);
-    assert.ok(hosts.every(host => host === 'example.github.io'), `${file}: personal GitHub Pages host found`);
+    assert.match(content, /https:\/\/imdaeseong\.github\.io\/llm-wiki\//, `${file}: deployment URL missing`);
+    assert.doesNotMatch(content, /https:\/\/example\.github\.io\/llm-wiki\//, `${file}: broken example URL found`);
   }
 });
 
